@@ -8,6 +8,7 @@ import { publicRouter } from './routes/public.js';
 import { executivesRouter } from './routes/executives.js';
 import { mediaRouter } from './routes/media.js';
 import { settingsRouter } from './routes/settings.js';
+import { readBlob } from './blobs.js';
 import { errorHandler, requireAuth, csrfIssuer } from './middleware.js';
 
 export const app = express();
@@ -86,7 +87,23 @@ app.get('/api/csrf', requireAuth, (req, res) => {
 });
 
 app.get('/api/health', (req, res) => res.json({ ok: true, ts: Date.now() }));
+// Add to server/app.js, after route imports
 
+
+app.get('/api/blob/*', async (req, res, next) => {
+  try {
+    const key = req.params[0]; // everything after /api/blob/
+    // Path safety
+    if (!key || key.includes('..')) return res.status(400).end();
+    const blob = await readBlob(key);
+    if (!blob) return res.status(404).end();
+
+    res.setHeader('Content-Type', blob.contentType);
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.send(blob.buffer);
+  } catch (err) { next(err); }
+});
 // ---------- Error handling ----------
 app.use(errorHandler);
 
