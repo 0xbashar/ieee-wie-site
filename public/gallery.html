@@ -1,0 +1,38 @@
+// In render() when m.kind === 'video':
+if (isVideo) {
+  // Use a thumbnail with a play button; the iframe loads on click for privacy
+  const thumb = el('div', { class: 'gi-thumb' }, [
+    m.poster_path ? el('img', { src: m.poster_path, alt: m.title, loading: 'lazy' }) : null,
+    el('span', { class: 'play' }, ['▶'])
+  ].filter(Boolean));
+  card = el('figure', { class: 'gallery-item', 'data-id': m.id, id: `video-${m.id}` }, [
+    thumb,
+    el('figcaption', {}, [
+      el('div', { class: 'gi-title', text: m.title }),
+      el('div', { class: 'gi-sub', text: (m.album || 'General') })
+    ])
+  ]);
+  card.addEventListener('click', () => openVideoLightbox(m));
+}
+
+function openVideoLightbox(m) {
+  const lb = document.getElementById('lightbox');
+  const host = document.getElementById('lbContent');
+  host.replaceChildren();
+  // Use youtube-nocookie.com for privacy-enhanced embed
+  const iframe = el('iframe', {
+    src: `https://www.youtube-nocookie.com/embed/${m.youtube_id}?autoplay=1&rel=0`,
+    width: '960', height: '540',
+    frameborder: '0',
+    allow: 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture',
+    allowfullscreen: true,
+    title: m.title || 'Video'
+  });
+  host.appendChild(iframe);
+  host.appendChild(el('div', { class: 'lb-meta' }, [
+    el('h4', { text: m.title || '' }),
+    m.caption ? el('p', { text: m.caption }) : null
+  ].filter(Boolean)));
+  lb.hidden = false;
+  document.body.style.overflow = 'hidden';
+}
